@@ -1,5 +1,6 @@
 package com.microsoft.fluentuidemo.demos
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,22 +8,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.Slider
+import androidx.compose.material.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
+import com.microsoft.fluentui.theme.FluentTheme
+import com.microsoft.fluentui.theme.token.FluentAliasTokens
 import com.microsoft.fluentui.tokenized.controls.RadioButton
 import com.microsoft.fluentui.tokenized.controls.ToggleSwitch
 import com.microsoft.fluentui.tokenized.drawer.BottomDrawer
+import com.microsoft.fluentui.tokenized.drawer.DrawerValue
 import com.microsoft.fluentui.tokenized.drawer.rememberBottomDrawerState
 import com.microsoft.fluentui.tokenized.listitem.ListItem
 import com.microsoft.fluentuidemo.R
@@ -51,17 +60,19 @@ class V2BottomDrawerActivity : V2DemoActivity() {
 
 @Composable
 private fun CreateActivityUI() {
-    var scrimVisible by remember { mutableStateOf(true) }
-    var dynamicSizeContent by remember { mutableStateOf(false) }
-    var nestedDrawerContent by remember { mutableStateOf(false) }
-    var listContent by remember { mutableStateOf(true) }
-    var expandable by remember { mutableStateOf(true) }
-    var skipOpenState by remember { mutableStateOf(false) }
-    var selectedContent by remember { mutableStateOf(ContentType.FULL_SCREEN_SCROLLABLE_CONTENT) }
-    var slideOver by remember { mutableStateOf(false) }
-    var showHandle by remember { mutableStateOf(true) }
-    var enableSwipeDismiss by remember { mutableStateOf(true) }
-    var preventDismissalOnScrimClick by remember { mutableStateOf(false) }
+    var scrimVisible by rememberSaveable { mutableStateOf(true) }
+    var dynamicSizeContent by rememberSaveable { mutableStateOf(false) }
+    var nestedDrawerContent by rememberSaveable { mutableStateOf(false) }
+    var listContent by rememberSaveable { mutableStateOf(true) }
+    var expandable by rememberSaveable { mutableStateOf(true) }
+    var skipOpenState by rememberSaveable { mutableStateOf(false) }
+    var selectedContent by rememberSaveable { mutableStateOf(ContentType.FULL_SCREEN_SCROLLABLE_CONTENT) }
+    var slideOver by rememberSaveable { mutableStateOf(false) }
+    var showHandle by rememberSaveable { mutableStateOf(true) }
+    var enableSwipeDismiss by rememberSaveable { mutableStateOf(true) }
+    var maxLandscapeWidthFraction by rememberSaveable { mutableFloatStateOf(1F) }
+    var preventDismissalOnScrimClick by rememberSaveable { mutableStateOf(false) }
+    var isLandscapeOrientation: Boolean = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         CreateDrawerWithButtonOnPrimarySurfaceToInvokeIt(
             slideOver = slideOver,
@@ -71,6 +82,7 @@ private fun CreateActivityUI() {
             showHandle = showHandle,
             preventDismissalOnScrimClick = preventDismissalOnScrimClick,
             enableSwipeDismiss = enableSwipeDismiss,
+            maxLandscapeWidthFraction = maxLandscapeWidthFraction,
             drawerContent =
             if (listContent)
                 getAndroidViewAsContent(selectedContent)
@@ -253,6 +265,43 @@ private fun CreateActivityUI() {
                     }
                 )
             }
+
+            item {
+                val maxLandscapeWidthFractionText = stringResource(id = R.string.bottom_drawer_max_width_landscape)
+                ListItem.Header(title = maxLandscapeWidthFractionText + if(!isLandscapeOrientation) " (Rotate to landscape Mode to use this)" else "",
+                    titleMaxLines = 2,
+                    enabled = isLandscapeOrientation,
+                    modifier = Modifier
+                        .clearAndSetSemantics {
+                            this.contentDescription = maxLandscapeWidthFractionText
+                        },
+                )
+                Slider(
+                    value = maxLandscapeWidthFraction,
+                    onValueChange = { maxLandscapeWidthFraction = it },
+                    valueRange = 0F..1F,
+                    enabled = isLandscapeOrientation,
+                    colors = SliderDefaults.colors(
+                        thumbColor = FluentTheme.aliasTokens.neutralForegroundColor[FluentAliasTokens.NeutralForegroundColorTokens.Foreground1].value(
+                            FluentTheme.themeMode
+                        ),
+                        activeTrackColor = FluentTheme.aliasTokens.brandColor[FluentAliasTokens.BrandColorTokens.Color80],
+                        inactiveTrackColor = FluentTheme.aliasTokens.neutralBackgroundColor[FluentAliasTokens.NeutralBackgroundColorTokens.Background3].value(
+                            FluentTheme.themeMode
+                        ),
+                        disabledThumbColor = FluentTheme.aliasTokens.neutralForegroundColor[FluentAliasTokens.NeutralForegroundColorTokens.ForegroundDisable1].value(
+                            FluentTheme.themeMode
+                        ),
+                        disabledActiveTrackColor = FluentTheme.aliasTokens.neutralForegroundColor[FluentAliasTokens.NeutralForegroundColorTokens.ForegroundDisable1].value(
+                            FluentTheme.themeMode
+                        ),
+                        disabledInactiveTrackColor = FluentTheme.aliasTokens.neutralForegroundColor[FluentAliasTokens.NeutralForegroundColorTokens.ForegroundDisable1].value(
+                            FluentTheme.themeMode
+                        )
+                    ),
+                    steps = 10
+                )
+            }
             item {
                 ListItem.Header(title = stringResource(id = R.string.drawer_select_drawer_content))
                 ListItem.Item(text = stringResource(id = R.string.drawer_full_screen_size_scrollable_content),
@@ -360,11 +409,12 @@ private fun CreateDrawerWithButtonOnPrimarySurfaceToInvokeIt(
     showHandle: Boolean,
     preventDismissalOnScrimClick: Boolean,
     enableSwipeDismiss: Boolean,
+    maxLandscapeWidthFraction: Float,
     drawerContent: @Composable ((() -> Unit) -> Unit),
 ) {
     val scope = rememberCoroutineScope()
 
-    val drawerState = rememberBottomDrawerState(expandable = expandable, skipOpenState = skipOpenState)
+    val drawerState = rememberBottomDrawerState(initialValue = DrawerValue.Closed, expandable = expandable, skipOpenState = skipOpenState)
 
     val open: () -> Unit = {
         scope.launch { drawerState.open() }
@@ -394,6 +444,7 @@ private fun CreateDrawerWithButtonOnPrimarySurfaceToInvokeIt(
         slideOver = slideOver,
         showHandle = showHandle,
         enableSwipeDismiss = enableSwipeDismiss,
+        maxLandscapeWidthFraction = maxLandscapeWidthFraction,
         preventDismissalOnScrimClick = preventDismissalOnScrimClick
     )
 }

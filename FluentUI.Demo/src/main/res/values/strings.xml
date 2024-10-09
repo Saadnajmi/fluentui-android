@@ -248,6 +248,10 @@
     <string name="bottom_sheet_item_delete_title">Delete</string>
     <!--UI Label for user action clicked on item delete-->
     <string name="bottom_sheet_item_delete_toast">Delete item clicked</string>
+    <!--UI Label for item toggle-->
+    <string name="bottom_sheet_item_toggle_title">Toggle</string>
+    <!--UI Label for user action clicked on item toggle-->
+    <string name="bottom_sheet_item_toggle_toast">Toggle item clicked</string>
     <!--UI Label for item avatar-->
     <string name="bottom_sheet_item_custom_image">Avatar</string>
     <!--Double line items-->
@@ -439,9 +443,9 @@
     </plurals>
 
     <!--Persistent BottomSheet-->
-    <string name="expand_bottom_sheet_button">Expand Persistent BottomSheet</string>
-    <string name="collapse_persistent_sheet_button"> Hide Persistent BottomSheet</string>
-    <string name="show_persistent_sheet_button"> Show Persistent BottomSheet</string>
+    <string name="expand_bottom_sheet_button">Expand Persistent Bottom Sheet</string>
+    <string name="collapse_persistent_sheet_button"> Hide Persistent Bottom Sheet</string>
+    <string name="show_persistent_sheet_button"> Show Persistent Bottom Sheet</string>
     <string name="new_view">This is New View</string>
     <string name="toggle_sheet_content">Toggle Bottomsheet Content</string>
     <string name="switch_to_custom_content">Switch to custom Content</string>
@@ -894,6 +898,7 @@
     <!-- UI Label for Show Handle -->
     <string name="drawer_show_handle">Show Handle</string>
     <string name="drawer_enable_swipe_dismiss">Enable Swipe Dismiss</string>
+    <string name="bottom_drawer_max_width_landscape">Max Landscape width</string>
 
     <!--V2 ToolTip-->
     <!-- UI Label for ToolTip Title-->
