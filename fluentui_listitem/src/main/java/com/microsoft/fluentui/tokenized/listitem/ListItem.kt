@@ -3,8 +3,10 @@ package com.microsoft.fluentui.tokenized.listitem
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -33,7 +35,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.*
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import com.microsoft.fluentui.listitem.R
 import com.microsoft.fluentui.icons.ListItemIcons
@@ -59,18 +60,22 @@ object ListItem {
         }
     }
 
-    private fun Modifier.clickAndSemanticsModifier(
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun Modifier.longPressSemanticsModifier(
         interactionSource: MutableInteractionSource,
         onClick: () -> Unit,
+        onLongClick: () -> Unit,
         enabled: Boolean,
         rippleColor: Color
     ): Modifier = composed {
-        Modifier.clickable(
+        Modifier.combinedClickable(
             interactionSource = interactionSource,
             indication = rememberRipple(color = rippleColor),
             onClickLabel = null,
+            onLongClickLabel = null,
             enabled = enabled,
-            onClick = onClick
+            onClick = onClick,
+            onLongClick = onLongClick
         )
     }
 
@@ -206,10 +211,12 @@ object ListItem {
         textAlignment: ListItemTextAlignment = ListItemTextAlignment.Regular,
         unreadDot: Boolean = false,
         enabled: Boolean = true,
+        selected: Boolean = false,
         textMaxLines: Int = 1,
         subTextMaxLines: Int = 1,
         secondarySubTextMaxLines: Int = 1,
         onClick: (() -> Unit)? = null,
+        onLongClick: (() -> Unit)? = null,
         primaryTextLeadingContent: (@Composable () -> Unit)? = null,
         primaryTextTrailingContent: (@Composable () -> Unit)? = null,
         secondarySubTextLeadingContent: (@Composable () -> Unit)? = null,
@@ -245,7 +252,7 @@ object ListItem {
         )
         val backgroundColor =
             token.backgroundBrush(listItemInfo).getBrushByState(
-                enabled = true, selected = false, interactionSource = interactionSource
+                enabled = true, selected = selected, interactionSource = interactionSource
             )
         val primaryTextTypography = token.primaryTextTypography(listItemInfo)
         val subTextTypography = token.subTextTypography(listItemInfo)
@@ -254,17 +261,17 @@ object ListItem {
         val primaryTextColor = token.primaryTextColor(
             listItemInfo
         ).getColorByState(
-            enabled = enabled, selected = false, interactionSource = interactionSource
+            enabled = enabled, selected = selected, interactionSource = interactionSource
         )
         val subTextColor = token.subTextColor(
             listItemInfo
         ).getColorByState(
-            enabled = enabled, selected = false, interactionSource = interactionSource
+            enabled = enabled, selected = selected, interactionSource = interactionSource
         )
         val secondarySubTextColor = token.secondarySubTextColor(
             listItemInfo
         ).getColorByState(
-            enabled = enabled, selected = false, interactionSource = interactionSource
+            enabled = enabled, selected = selected, interactionSource = interactionSource
         )
         val rippleColor = token.rippleColor(listItemInfo)
         val unreadDotColor = token.unreadDotColor(listItemInfo)
@@ -274,7 +281,7 @@ object ListItem {
             token.borderInset(listItemInfo).toPx()
         }
         val borderColor = token.borderColor(listItemInfo).getColorByState(
-            enabled = enabled, selected = false, interactionSource = interactionSource
+            enabled = enabled, selected = selected, interactionSource = interactionSource
         )
         val textAccessoryContentTextSpacing = token.textAccessoryContentTextSpacing(listItemInfo)
         val leadingAccessoryAlignment = when (leadingAccessoryContentAlignment) {
@@ -287,6 +294,7 @@ object ListItem {
             Alignment.Bottom -> Alignment.BottomEnd
             else -> Alignment.CenterEnd
         }
+        val textOverflow = token.textOverflow(listItemInfo)
         Row(
             modifier
                 .background(backgroundColor)
@@ -295,9 +303,10 @@ object ListItem {
                 .borderModifier(border, borderColor, borderSize, borderInsetToPx)
                 .then(
                     if (onClick != null) {
-                        Modifier.clickAndSemanticsModifier(
+                        Modifier.longPressSemanticsModifier(
                             interactionSource,
                             onClick = onClick,
+                            onLongClick = onLongClick ?: {},
                             enabled,
                             rippleColor
                         )
@@ -356,7 +365,7 @@ object ListItem {
                             text = text,
                             style = primaryTextTypography.merge(TextStyle(color = primaryTextColor)),
                             maxLines = textMaxLines,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = textOverflow
                         )
                         if (primaryTextTrailingContent != null) {
                             primaryTextTrailingContent()
@@ -368,7 +377,7 @@ object ListItem {
                                 text = subText,
                                 style = subTextTypography.merge(TextStyle(color = subTextColor)),
                                 maxLines = subTextMaxLines,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = textOverflow
                             )
                         }
                     }
@@ -391,7 +400,7 @@ object ListItem {
                                         text = secondarySubText,
                                         style = secondarySubTextTypography.merge(TextStyle(color = secondarySubTextColor)),
                                         maxLines = secondarySubTextMaxLines,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = textOverflow
                                     )
                                 } else if (secondarySubTextAnnotated != null) {
                                     BasicText(
@@ -399,7 +408,7 @@ object ListItem {
                                         text = secondarySubTextAnnotated,
                                         inlineContent = secondarySubTextInlineContent,
                                         maxLines = secondarySubTextMaxLines,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = textOverflow
                                     )
                                 }
                                 if (secondarySubTextTrailingContent != null) {
@@ -437,10 +446,12 @@ object ListItem {
      * @param textAlignment Optional [ListItemTextAlignment] to align text in the center or start at the lead.
      * @param unreadDot Option boolean value that display a dot on leading edge of the accessory Content and makes the primary text bold on true
      * @param enabled Optional enable/disable List item
+     * @param selected Optional selected state for List item.
      * @param textMaxLines Optional max visible lines for primary text.
      * @param subTextMaxLines Optional max visible lines for secondary text.
      * @param secondarySubTextMaxLines Optional max visible lines for tertiary text.
      * @param onClick Optional onClick action for list item.
+     * @param onLongClick Optional onLongClick action for list item.
      * @param primaryTextLeadingContent Optional primary text leading Content.
      * @param primaryTextTrailingContent Optional primary text trailing Content.
      * @param secondarySubTextLeadingContent Optional secondary text leading Content.
@@ -465,10 +476,12 @@ object ListItem {
         textAlignment: ListItemTextAlignment = ListItemTextAlignment.Regular,
         unreadDot: Boolean = false,
         enabled: Boolean = true,
+        selected: Boolean = false,
         textMaxLines: Int = 1,
         subTextMaxLines: Int = 1,
         secondarySubTextMaxLines: Int = 1,
         onClick: (() -> Unit)? = null,
+        onLongClick: (() -> Unit)? = null,
         primaryTextLeadingContent: (@Composable () -> Unit)? = null,
         primaryTextTrailingContent: (@Composable () -> Unit)? = null,
         secondarySubTextLeadingContent: (@Composable () -> Unit)? = null,
@@ -492,10 +505,12 @@ object ListItem {
             textAlignment = textAlignment,
             unreadDot = unreadDot,
             enabled = enabled,
+            selected = selected,
             textMaxLines = textMaxLines,
             subTextMaxLines = subTextMaxLines,
             secondarySubTextMaxLines = secondarySubTextMaxLines,
             onClick = onClick,
+            onLongClick = onLongClick,
             primaryTextLeadingContent = primaryTextLeadingContent,
             primaryTextTrailingContent = primaryTextTrailingContent,
             secondarySubTextLeadingContent = secondarySubTextLeadingContent,
@@ -524,10 +539,12 @@ object ListItem {
      * @param textAlignment Optional [ListItemTextAlignment] to align text in the center or start at the lead.
      * @param unreadDot Option boolean value that display a dot on leading edge of the accessory Content and makes the primary text bold on true
      * @param enabled Optional enable/disable List item
+     * @param selected Optional selected state for the list item.
      * @param textMaxLines Optional max visible lines for primary text.
      * @param subTextMaxLines Optional max visible lines for secondary text.
      * @param secondarySubTextMaxLines Optional max visible lines for tertiary text.
      * @param onClick Optional onClick action for list item.
+     * @param onLongClick Optional onLongClick action for list item.
      * @param primaryTextLeadingContent Optional primary text leading Content.
      * @param primaryTextTrailingContent Optional primary text trailing Content.
      * @param secondarySubTextLeadingContent Optional secondary text leading Content.
@@ -553,10 +570,12 @@ object ListItem {
         textAlignment: ListItemTextAlignment = ListItemTextAlignment.Regular,
         unreadDot: Boolean = false,
         enabled: Boolean = true,
+        selected: Boolean = false,
         textMaxLines: Int = 1,
         subTextMaxLines: Int = 1,
         secondarySubTextMaxLines: Int = 1,
         onClick: (() -> Unit)? = null,
+        onLongClick: (() -> Unit)? = null,
         primaryTextLeadingContent: (@Composable () -> Unit)? = null,
         primaryTextTrailingContent: (@Composable () -> Unit)? = null,
         secondarySubTextLeadingContent: (@Composable () -> Unit)? = null,
@@ -581,10 +600,12 @@ object ListItem {
             textAlignment = textAlignment,
             unreadDot = unreadDot,
             enabled = enabled,
+            selected = selected,
             textMaxLines = textMaxLines,
             subTextMaxLines = subTextMaxLines,
             secondarySubTextMaxLines = secondarySubTextMaxLines,
             onClick = onClick,
+            onLongClick = onLongClick,
             primaryTextLeadingContent = primaryTextLeadingContent,
             primaryTextTrailingContent = primaryTextTrailingContent,
             secondarySubTextLeadingContent = secondarySubTextLeadingContent,
@@ -694,6 +715,7 @@ object ListItem {
         )
         val expandedString = LocalContext.current.resources.getString(R.string.fluentui_expanded)
         val collapsedString = LocalContext.current.resources.getString(R.string.fluentui_collapsed)
+        val textOverflow = token.textOverflow(listItemInfo)
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -701,9 +723,12 @@ object ListItem {
                 .background(backgroundColor)
                 .then(
                     if (enableContentOpenCloseTransition && content != null) {
-                        Modifier.clickAndSemanticsModifier(
+                        Modifier.longPressSemanticsModifier(
                             interactionSource,
                             onClick = {
+                                expandedState = !expandedState
+                            },
+                            onLongClick = {
                                 expandedState = !expandedState
                             },
                             enabled,
@@ -768,7 +793,7 @@ object ListItem {
                                     text = title,
                                     style = primaryTextTypography.merge(TextStyle(color = primaryTextColor)),
                                     maxLines = titleMaxLines,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = textOverflow
                                 )
                                 if(titleTrailingContent != null){
                                     titleTrailingContent()
@@ -784,7 +809,7 @@ object ListItem {
                                 Modifier.clickable(
                                     onClick = accessoryTextOnClick ?: {})
                                     .clearAndSetSemantics { contentDescription = accessoryTextTitle
-                                    role = Role.Button },
+                                        role = Role.Button },
                                 style = actionTextTypography.merge(TextStyle(color = actionTextColor))
                             )
                         }
@@ -827,6 +852,7 @@ object ListItem {
      * @param actionText Option boolean to append "Action" text button to the description text.
      * @param descriptionPlacement [TextPlacement] Enum value for placing the description text in the list item.
      * @param onClick Optional onClick action for list item.
+     * @param onLongClick Optional onLongClick action for list item.
      * @param onActionClick Optional onClick action for actionText.
      * @param border [BorderType] Optional border for the list item.
      * @param borderInset [BorderInset] Optional borderInset for list item.
@@ -844,6 +870,7 @@ object ListItem {
         border: BorderType = NoBorder,
         borderInset: BorderInset = None,
         onClick: (() -> Unit)? = null,
+        onLongClick: (() -> Unit)? = null,
         onActionClick: (() -> Unit)? = null,
         interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
         leadingAccessoryContent: (@Composable () -> Unit)? = null,
@@ -895,8 +922,8 @@ object ListItem {
                 .heightIn(min = cellHeight)
                 .background(backgroundColor)
                 .borderModifier(border, borderColor, borderSize, borderInsetToPx)
-                .clickAndSemanticsModifier(
-                    interactionSource, onClick = onClick ?: {}, enabled, rippleColor
+                .longPressSemanticsModifier(
+                    interactionSource, onClick = onClick ?: {}, onLongClick = onLongClick ?: {} ,enabled, rippleColor
                 ), verticalAlignment = descriptionAlignment
         ) {
             if (leadingAccessoryContent != null && descriptionPlacement == Top) {
@@ -1018,7 +1045,7 @@ object ListItem {
         val borderColor = token.borderColor(listItemInfo).getColorByState(
             enabled = enabled, selected = false, interactionSource = interactionSource
         )
-
+        val textOverflow = token.textOverflow(listItemInfo)
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -1045,7 +1072,7 @@ object ListItem {
                         .weight(1f),
                     style = primaryTextTypography.merge(TextStyle(color = primaryTextColor)),
                     maxLines = titleMaxLines,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = textOverflow
                 )
 
                 if (accessoryTextTitle != null) {
@@ -1060,7 +1087,8 @@ object ListItem {
                                 onClick = accessoryTextOnClick ?: {})
                             .clearAndSetSemantics { contentDescription = accessoryTextTitle
                                 role = Role.Button },
-                        style = actionTextTypography.merge(TextStyle(color = actionTextColor))
+                        style = actionTextTypography.merge(TextStyle(color = actionTextColor)),
+                        overflow = textOverflow,
                     )
                 }
                 if (trailingAccessoryContent != null) {

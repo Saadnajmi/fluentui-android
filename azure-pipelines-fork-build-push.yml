@@ -24,7 +24,7 @@ jobs:
           sonarQubeRunAnalysis: false
           spotBugsAnalysis: false
 
-      - task: Gradle@2
+      - task: Gradle@3
         displayName: "gradlew build"
         inputs:
           gradleWrapperFile: "gradlew"
@@ -32,18 +32,18 @@ jobs:
           javaHomeOption: "JDKVersion"
           jdkVersionOption: "$(jdkVersion)"
 
-      - task: Gradle@2
+      - task: Gradle@3
         displayName: Unit tests
         inputs:
           gradleWrapperFile: "gradlew"
           tasks: "testDevelopmentDebugUnitTest"
           publishJUnitResults: false
           javaHomeOption: "JDKVersion"
-          jdkVersionOption: "$(jdkVersion)"
+          jdkVersionOption: "17"
           sonarQubeRunAnalysis: false
           spotBugsAnalysis: false
 
-      - task: Gradle@2
+      - task: Gradle@3
         displayName: Generate testApk
         inputs:
           gradleWrapperFile: "gradlew"
@@ -54,8 +54,9 @@ jobs:
           sonarQubeRunAnalysis: false
           spotBugsAnalysis: false
 
-      - task: Gradle@2
+      - task: Gradle@3
         displayName: Hydra Lab UI test
+        condition: eq(coalesce(variables['runHydraLabTests'], 'false'), 'true')
         inputs:
           gradleWrapperFile: "gradlew"
           tasks: "requestHydraLabTest -PappPath=$(build.sourcesdirectory)/FluentUI.Demo/build/outputs/apk/development/debug/FluentUI.Demo-development-debug.apk -PtestAppPath=$(build.sourcesdirectory)/FluentUI.Demo/build/outputs/apk/androidTest/development/debug/FluentUI.Demo-development-debug-androidTest.apk -PbuildFlavor=$(buildFlavor) -PtestSuiteName=$(testSuiteName) -PrunTimeOutSeconds=$(timeOutSeconds) -PdeviceIdentifier=$(deviceIdentifier) -PgroupTestType=$(groupTestType) -PreportAudience=TestLabOwner -PauthToken=$(authToken) -PpkgName=$(pkgName) -PtestPkgName=$(testPkgName) -PrunningType=$(runningType) -PframeworkType=$(frameworkType) -PhydraLabAPIHost=$(hydraLabAPIHost) -PhydraLabAPISchema=$(hydraLabAPISchema)"

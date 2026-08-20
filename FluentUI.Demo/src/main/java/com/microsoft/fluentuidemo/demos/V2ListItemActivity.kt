@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -33,6 +38,7 @@ import com.microsoft.fluentui.theme.FluentTheme.aliasTokens
 import com.microsoft.fluentui.theme.FluentTheme.themeMode
 import com.microsoft.fluentui.theme.token.FluentAliasTokens
 import com.microsoft.fluentui.theme.token.FluentGlobalTokens
+import com.microsoft.fluentui.theme.token.FluentIcon
 import com.microsoft.fluentui.theme.token.Icon
 import com.microsoft.fluentui.theme.token.controlTokens.AvatarSize
 import com.microsoft.fluentui.theme.token.controlTokens.AvatarSize.Size24
@@ -108,6 +114,7 @@ private fun CreateListActivityUI(context: Context) {
             ListItem.Item(
                 text = primaryText,
                 onClick = {},
+                onLongClick = { invokeToast("ListItem Long", context) },
                 border = BorderType.Bottom,
                 borderInset = XXLarge,
                 primaryTextTrailingContent = { Icon20() }
@@ -115,6 +122,7 @@ private fun CreateListActivityUI(context: Context) {
             ListItem.Item(
                 text = primaryText,
                 onClick = {},
+                onLongClick = { invokeToast("ListItem Long", context) },
                 subText = secondaryText,
                 border = BorderType.Bottom,
                 borderInset = XXLarge,
@@ -123,6 +131,7 @@ private fun CreateListActivityUI(context: Context) {
             ListItem.Item(
                 text = primaryText,
                 onClick = {},
+                onLongClick = { invokeToast("ListItem Long", context) },
                 subText = secondaryText,
                 secondarySubText = tertiaryText,
                 border = BorderType.Bottom,
@@ -275,8 +284,28 @@ private fun CreateListActivityUI(context: Context) {
                 border = BorderType.Bottom
             )
             ListItem.SectionDescription(description = "Centered action text only supports primary text and ignores any given trailing or leading accessory Contents")
+            GroupedList()
         }
     }
+}
+
+@Composable
+private fun GroupedList() {
+    ListItem.Header("Grouped List")
+    ListItem.SectionDescription(description = "Grouped List", modifier = Modifier.height(25.dp))
+    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp).clip(
+        RoundedCornerShape(10.dp))) {
+        for(i in 0..3) {
+            ListItem.Item(
+                text = "Text",
+                onClick = {},
+                textAlignment = ListItemTextAlignment.Regular,
+                border = BorderType.Bottom,
+                trailingAccessoryContent = { Icon(icon = FluentIcon(Icons.Outlined.KeyboardArrowRight))},
+            )
+        }
+    }
+    ListItem.SectionDescription(description = "Grouped list containing multiple similar elements", modifier = Modifier.wrapContentHeight().padding(0.dp))
 }
 
 @Composable
@@ -393,11 +422,13 @@ private fun OneLineListAccessoryContentContent(context: Context) {
             },
             border = BorderType.Bottom,
             borderInset = XXLarge,
-            onClick = { checked = !checked }
+            onClick = { checked = !checked },
+            onLongClick = { invokeToast("ListItem Long", context) }
         )
         ListItem.Item(
             text = primaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = {
                 RightContentButton(
                     size = ButtonSize.Small,
@@ -417,6 +448,7 @@ private fun OneLineListAccessoryContentContent(context: Context) {
         ListItem.Item(
             text = primaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentAvatar(size = Size24) },
             border = BorderType.Bottom,
             borderInset = XXLarge
@@ -430,6 +462,7 @@ private fun OneLineListAccessoryContentContent(context: Context) {
         ListItem.Item(
             text = "",
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentThreeIcon() },
             border = BorderType.Bottom,
             borderInset = XXLarge
@@ -437,6 +470,7 @@ private fun OneLineListAccessoryContentContent(context: Context) {
         ListItem.Item(
             text = primaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentRadioButton() },
             trailingAccessoryContent = { RightContentAvatarStack(Size24) },
             border = BorderType.Bottom,
@@ -445,6 +479,7 @@ private fun OneLineListAccessoryContentContent(context: Context) {
         ListItem.Item(
             text = primaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentThreeButton() },
             trailingAccessoryContent = { RightContentToggle() },
             border = BorderType.Bottom,
@@ -462,6 +497,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             text = primaryText,
             secondarySubText = tertiaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentAvatar(size = Size40) },
             trailingAccessoryContent = { LeftContentAvatar(size = Size40) },
             border = BorderType.Bottom,
@@ -477,6 +513,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             borderInset = XXLarge,
             unreadDot = unreadDot1,
             onClick = { unreadDot1 = !unreadDot1 },
+            onLongClick = { invokeToast("ListItem Long", context) },
             primaryTextTrailingContent = { Icon20() },
             secondarySubTextTrailingContent = { Icon16() }
         )
@@ -488,6 +525,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             borderInset = XXLarge,
             unreadDot = unreadDot2,
             onClick = { unreadDot2 = !unreadDot2 },
+            onLongClick = { invokeToast("ListItem Long", context) },
             primaryTextTrailingContent = { Icon20() },
             secondarySubTextTrailingContent = { Icon16() }
         )
@@ -495,6 +533,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             text = primaryText,
             secondarySubText = tertiaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentFolderIcon40() },
             primaryTextLeadingContent = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -516,6 +555,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             text = primaryText,
             subText = secondaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentFolderIcon40() },
             trailingAccessoryContent = { RightContentAvatarStack(Size40) },
             border = BorderType.Bottom,
@@ -526,6 +566,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             secondarySubText = tertiaryText,
             leadingAccessoryContent = { LeftContentFolderIcon40() },
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             secondarySubTextLeadingContent = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon16()
@@ -551,6 +592,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             text = primaryText,
             secondarySubText = tertiaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentFolderIcon40() },
             secondarySubTextTrailingContent = { Icon16() },
             trailingAccessoryContent = { RightContentToggle() },
@@ -561,6 +603,7 @@ private fun TwoLineListAccessoryContentContent(context: Context) {
             text = primaryText,
             subText = secondaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentThreeButton() },
             trailingAccessoryContent = { RightContentText("Value") },
             border = BorderType.Bottom,
@@ -587,6 +630,7 @@ private fun ThreeLineListAccessoryContentContent(
             subText = "Wanda can you please update the file with comments",
             secondarySubTextAnnotated = footer,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentAvatar(size = Size56) },
             trailingAccessoryContent = { rightContentIconButton() },
             primaryTextTrailingContent = { Badge(text = "2") },
@@ -602,6 +646,7 @@ private fun ThreeLineListAccessoryContentContent(
             subText = secondaryText,
             secondarySubText = tertiaryText,
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             leadingAccessoryContent = { LeftContentFolderIcon40() },
             primaryTextTrailingContent = { Badge(text = "Suggested") },
             trailingAccessoryContent = {
@@ -618,6 +663,7 @@ private fun ThreeLineListAccessoryContentContent(
             subText = secondaryText,
             bottomContent = { LinearProgressIndicator() },
             onClick = {},
+            onLongClick = { invokeToast("ListItem Long", context) },
             primaryTextLeadingContent = { Icon20() },
             secondarySubTextTrailingContent = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

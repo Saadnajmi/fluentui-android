@@ -2,13 +2,9 @@ package com.microsoft.fluentui.tokenized
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -20,21 +16,20 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.microsoft.fluentui.core.R
 import com.microsoft.fluentui.icons.ListItemIcons
-import com.microsoft.fluentui.icons.SearchBarIcons
-import com.microsoft.fluentui.icons.appbaricons.AppBarIcons
-import com.microsoft.fluentui.icons.appbaricons.appbaricons.Arrowback
 import com.microsoft.fluentui.icons.listitemicons.Chevron
 import com.microsoft.fluentui.theme.FluentTheme
 import com.microsoft.fluentui.theme.token.*
 import com.microsoft.fluentui.theme.token.controlTokens.AppBarInfo
 import com.microsoft.fluentui.theme.token.controlTokens.AppBarSize
 import com.microsoft.fluentui.theme.token.controlTokens.AppBarTokens
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.*
+import com.microsoft.fluentui.util.clickableWithTooltip
 
 /**
  * An app bar appears at the top of an app screen, below the status bar,
@@ -54,7 +49,6 @@ import com.microsoft.fluentui.theme.token.controlTokens.AppBarTokens
  * @param subTitle Subtitle to be displayed. Default: [null]
  * @param logo Composable to be placed at left of Title. Guideline is to not increase a size of 32x32. Default: [null]
  * @param searchMode Boolean to enable/disable searchMode. Default: [false]
- * @param navigationIcon Navigate Back Icon to be placed at extreme left. Default: [SearchBarIcons.Arrowback]
  * @param postTitleIcon Icon to be placed after title making the title clickable. Default: Empty [FluentIcon]
  * @param preSubtitleIcon Icon to be placed before subtitle. Default: Empty [FluentIcon]
  * @param postSubtitleIcon Icon to be placed after subtitle. Default: [ListItemIcons.Chevron]
@@ -64,7 +58,10 @@ import com.microsoft.fluentui.theme.token.controlTokens.AppBarTokens
  * @param bottomBorder Boolean to place a bottom border on AppBar. Applies only when searchBar and bottomBar are empty. Default: [true]
  * @param appTitleDelta Ratio of opening of appTitle. Used for Shychrome and other animations. Default: [1.0F]
  * @param accessoryDelta Ratio of opening of accessory View. Used for Shychrome and other animations. Default: [1.0F]
+ * @param centerAlignAppBar boolean indicating if the app bar should be center aligned. Default: [false]
+ * @param navigationIcon Navigate Back Icon to be placed at extreme left. Default: [null]
  * @param appBarTokens Optional Tokens for App Bar to customize it. Default: [null]
+ * @param secondaryPostTitleIcon Secondary icon to be placed after title. Default: Empty [FluentIcon]
  */
 
 // TAGS FOR TESTING
@@ -72,7 +69,7 @@ const val APP_BAR = "Fluent App bar"
 const val APP_BAR_SUBTITLE = "Fluent App bar Subtitle"
 const val APP_BAR_BOTTOM_BAR = "Fluent App bar Bottom bar"
 const val APP_BAR_SEARCH_BAR = "Fluent App bar Search bar"
-@OptIn(ExperimentalTextApi::class)
+
 @Composable
 fun AppBar(
     title: String,
@@ -82,7 +79,6 @@ fun AppBar(
     subTitle: String? = null,
     logo: @Composable (() -> Unit)? = null,
     searchMode: Boolean = false,
-    navigationIcon: FluentIcon = FluentIcon(AppBarIcons.Arrowback, flipOnRtl = true),
     postTitleIcon: FluentIcon = FluentIcon(),
     preSubtitleIcon: FluentIcon = FluentIcon(),
     postSubtitleIcon: FluentIcon = FluentIcon(
@@ -95,16 +91,18 @@ fun AppBar(
     bottomBorder: Boolean = true,
     appTitleDelta: Float = 1.0F,
     accessoryDelta: Float = 1.0F,
-    appBarTokens: AppBarTokens? = null
+    centerAlignAppBar: Boolean = false,
+    navigationIcon: FluentIcon? = null,
+    appBarTokens: AppBarTokens? = null,
+    secondaryPostTitleIcon: FluentIcon = FluentIcon(),
 ) {
     val themeID =
         FluentTheme.themeID    //Adding This only for recomposition in case of Token Updates. Unused otherwise.
 
     val token = appBarTokens
         ?: FluentTheme.controlTokens.tokens[ControlTokens.ControlType.AppBarControlType] as AppBarTokens
-
-
     val appBarInfo = AppBarInfo(style, appBarSize)
+    val tooltipControls = token.tooltipVisibilityControls(appBarInfo)
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -140,61 +138,71 @@ fun AppBar(
                     .fillMaxWidth()
                     .scale(scaleX = 1.0F, scaleY = appTitleDelta)
                     .alpha(if (appTitleDelta != 1.0F) appTitleDelta / 3 else 1.0F),
-                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (appBarSize != AppBarSize.Large && navigationIcon.isIconAvailable()) {
+                if (navigationIcon !== null && navigationIcon.isIconAvailable()) {
                     Icon(
                         navigationIcon,
-                        modifier =
-                        Modifier.then(
-                            if(navigationIcon.onClick != null)
-                                Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = rememberRipple(color = token.navigationIconRippleColor()),
-                                enabled = true,
-                                onClick = navigationIcon.onClick ?: {}
+                        modifier = Modifier.clickableWithTooltip(
+                                tooltipText = navigationIcon.contentDescription ?: "",
+                                tooltipEnabled = tooltipControls.enableNavigationIconTooltip,
+                                backgroundColor = token.tooltipBackgroundBrush(appBarInfo),
+                                textStyle = token.tooltipTextStyle(appBarInfo),
+                                cornerRadius = token.tooltipCornerRadius(appBarInfo),
+                                clickRippleColor = token.navigationIconRippleColor(),
+                                onClick = navigationIcon.onClick,
+                                onLongClick = navigationIcon.onLongClick,
+                                offset = token.tooltipOffset(appBarInfo),
+                                timeout = token.tooltipTimeout(appBarInfo),
                             )
-                            else Modifier
-                        )
                             .padding(token.navigationIconPadding(appBarInfo))
                             .size(token.leftIconSize(appBarInfo)),
                         tint = token.navigationIconColor(appBarInfo)
                     )
                 }
 
-                if (appBarSize != AppBarSize.Medium) {
-                    Box(
-                        modifier = Modifier
-                            .then(
-                                if (appBarSize == AppBarSize.Large)
-                                    Modifier.padding(start = 16.dp)
-                                else
-                                    Modifier
-                            )
-                    ) {
-                        logo?.invoke()
-                    }
-                }
+                logo?.invoke()
 
                 val titleTextStyle = token.titleTypography(appBarInfo)
                 val subtitleTextStyle = token.subtitleTypography(appBarInfo)
+                val titleAlignment: Alignment.Horizontal =
+                    if (centerAlignAppBar) Alignment.CenterHorizontally else Alignment.Start
 
-                if (appBarSize != AppBarSize.Large && !subTitle.isNullOrBlank()) {
+                if (appBarSize != AppBarSize.Large) {
                     Column(
                         modifier = Modifier
                             .weight(1F)
                             .padding(token.textPadding(appBarInfo))
-                            .testTag(APP_BAR_SUBTITLE)
+                            .testTag(APP_BAR_SUBTITLE),
+                        horizontalAlignment = titleAlignment
                     ) {
+                        // title
                         Row(
-                            modifier = Modifier
-                                .then(
-                                    if (postTitleIcon.onClick != null && appBarSize == AppBarSize.Small)
-                                        Modifier.clickable(onClick = postTitleIcon.onClick!!)
-                                    else
-                                        Modifier
-                                ), verticalAlignment = Alignment.CenterVertically
+                            modifier = if (postTitleIcon.isIconAvailable() && postTitleIcon.onClick != null) {
+                                Modifier.clickableWithTooltip(
+                                    tooltipText = title,
+                                    tooltipEnabled = tooltipControls.enableTitleTooltip,
+                                    backgroundColor = token.tooltipBackgroundBrush(
+                                        appBarInfo
+                                    ),
+                                    textStyle = token.tooltipTextStyle(appBarInfo),
+                                    cornerRadius = token.tooltipCornerRadius(appBarInfo),
+                                    clickRippleColor = token.tooltipRippleColor(appBarInfo),
+                                    onClick = {
+                                        if (appBarSize == AppBarSize.Small) {
+                                            postTitleIcon.onClick?.invoke()
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (appBarSize == AppBarSize.Small) {
+                                            postTitleIcon.onLongClick?.invoke()
+                                        }
+                                    },
+                                    offset = token.tooltipOffset(appBarInfo),
+                                    timeout = token.tooltipTimeout(appBarInfo)
+                                )
+                            } else Modifier,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicText(
                                 text = title,
@@ -204,7 +212,8 @@ fun AppBar(
                                     )
                                 ),
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                             if (postTitleIcon.isIconAvailable() && appBarSize == AppBarSize.Small)
                                 Icon(
@@ -214,68 +223,116 @@ fun AppBar(
                                         .size(token.titleIconSize(appBarInfo)),
                                     tint = token.titleIconColor(appBarInfo),
                                 )
+
+                            if (secondaryPostTitleIcon.isIconAvailable() && appBarSize == AppBarSize.Small)
+                                Icon(
+                                    secondaryPostTitleIcon.value(),
+                                    secondaryPostTitleIcon.contentDescription,
+                                    modifier = Modifier
+                                        .size(token.titleIconSize(appBarInfo)),
+                                    tint = token.titleIconColor(appBarInfo),
+                                )
                         }
-                        Row(
-                            modifier = Modifier
-                                .then(
-                                    if (postSubtitleIcon.onClick != null)
-                                        Modifier.clickable(onClick = postSubtitleIcon.onClick!!)
-                                    else
-                                        Modifier
-                                ), verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (preSubtitleIcon.isIconAvailable())
-                                Icon(
-                                    preSubtitleIcon,
-                                    modifier = Modifier
-                                        .size(
-                                            token.subtitleIconSize(
-                                                appBarInfo
-                                            )
-                                        ),
-                                    tint = token.subtitleIconColor(appBarInfo)
-                                )
-                            BasicText(
-                                subTitle,
-                                style = subtitleTextStyle.merge(
-                                    TextStyle(
-                                        color = token.subtitleTextColor(
+                        // subtitle
+                        if (!subTitle.isNullOrBlank()) {
+                            Row(
+                                modifier = Modifier.clickableWithTooltip(
+                                        tooltipText = subTitle,
+                                        tooltipEnabled = tooltipControls.enableSubtitleTooltip,
+                                        backgroundColor = token.tooltipBackgroundBrush(
                                             appBarInfo
-                                        )
+                                        ),
+                                        textStyle = token.tooltipTextStyle(appBarInfo),
+                                        cornerRadius = token.tooltipCornerRadius(appBarInfo),
+                                        clickRippleColor = token.tooltipRippleColor(
+                                            appBarInfo
+                                        ),
+                                        onClick = {
+                                            if (appBarSize == AppBarSize.Small) {
+                                                preSubtitleIcon.onClick?.invoke()
+                                            }
+                                        },
+                                        onLongClick = {
+                                            if (appBarSize == AppBarSize.Small) {
+                                                postSubtitleIcon.onLongClick?.invoke()
+                                            }
+                                        },
+                                        offset = token.tooltipOffset(appBarInfo),
+                                        timeout = token.tooltipTimeout(appBarInfo)
+                                    ),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (preSubtitleIcon.isIconAvailable())
+                                    Icon(
+                                        preSubtitleIcon,
+                                        modifier = Modifier
+                                            .size(
+                                                token.subtitleIconSize(
+                                                    appBarInfo
+                                                )
+                                            ),
+                                        tint = token.subtitleIconColor(appBarInfo)
                                     )
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (postSubtitleIcon.isIconAvailable())
-                                Icon(
-                                    postSubtitleIcon.value(),
-                                    contentDescription = postSubtitleIcon.contentDescription,
-                                    modifier = Modifier
-                                        .size(
-                                            token.subtitleIconSize(
+                                BasicText(
+                                    subTitle,
+                                    style = subtitleTextStyle.merge(
+                                        TextStyle(
+                                            color = token.subtitleTextColor(
                                                 appBarInfo
                                             )
-                                        ),
-                                    tint = token.subtitleIconColor(appBarInfo)
+                                        )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                if (postSubtitleIcon.isIconAvailable())
+                                    Icon(
+                                        postSubtitleIcon.value(),
+                                        contentDescription = postSubtitleIcon.contentDescription,
+                                        modifier = Modifier
+                                            .size(
+                                                token.subtitleIconSize(
+                                                    appBarInfo
+                                                )
+                                            ),
+                                        tint = token.subtitleIconColor(appBarInfo)
+                                    )
+                            }
                         }
                     }
                 } else {
-                    BasicText(
-                        text = title,
-                        modifier = Modifier
+                    Column(
+                        modifier = Modifier.clickableWithTooltip(
+                                tooltipText = title,
+                                tooltipEnabled = tooltipControls.enableTitleTooltip,
+                                backgroundColor = token.tooltipBackgroundBrush(appBarInfo),
+                                cornerRadius = token.tooltipCornerRadius(appBarInfo),
+                                textStyle = token.tooltipTextStyle(appBarInfo),
+                                clickRippleColor = token.tooltipRippleColor(appBarInfo),
+                                showRippleOnClick = false,
+                                onClick = {},
+                                onLongClick = {},
+                                offset = token.tooltipOffset(appBarInfo),
+                                timeout = token.tooltipTimeout(appBarInfo)
+                            )
                             .padding(token.textPadding(appBarInfo))
                             .weight(1F)
                             .semantics { heading() },
-                        style = titleTextStyle.merge(
-                            TextStyle(
-                                color = token.titleTextColor(appBarInfo)
-                            )
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                        horizontalAlignment = titleAlignment
+                    ) {
+
+                        BasicText(
+                            text = title,
+                            style = titleTextStyle.merge(
+                                TextStyle(
+                                    color = token.titleTextColor(appBarInfo)
+                                )
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                    }
                 }
 
                 if (rightAccessoryView != null) {

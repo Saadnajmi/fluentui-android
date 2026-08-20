@@ -1,7 +1,13 @@
 package com.microsoft.fluentuidemo.demos
 
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +31,8 @@ import com.microsoft.fluentui.tokenized.controls.Button
 import com.microsoft.fluentui.tokenized.controls.ToggleSwitch
 import com.microsoft.fluentui.tokenized.listitem.ChevronOrientation
 import com.microsoft.fluentui.tokenized.listitem.ListItem
+import com.microsoft.fluentui.tokenized.notification.AnimationBehavior
+import com.microsoft.fluentui.tokenized.notification.AnimationVariables
 import com.microsoft.fluentui.tokenized.notification.NotificationDuration
 import com.microsoft.fluentui.tokenized.notification.NotificationResult
 import com.microsoft.fluentui.tokenized.notification.Snackbar
@@ -53,6 +61,7 @@ class V2SnackbarActivity : V2DemoActivity() {
     override val controlTokensUrl =
         "https://github.com/microsoft/fluentui-android/wiki/Controls#control-tokens-34"
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val context = this
@@ -272,7 +281,8 @@ class V2SnackbarActivity : V2DemoActivity() {
                                     actionText = if (actionLabel) actionButtonString else null,
                                     subTitle = subtitle,
                                     duration = duration,
-                                    enableDismiss = dismissEnabled
+                                    enableDismiss = dismissEnabled,
+                                    animationBehavior = customizedAnimationBehavior
                                 )
 
                                 when (result) {
@@ -304,7 +314,7 @@ class V2SnackbarActivity : V2DemoActivity() {
 
                     Button(
                         onClick = {
-                            snackbarState.currentSnackbar?.dismiss()
+                            snackbarState.currentSnackbar?.dismiss(scope)
                         },
                         text = LocalContext.current.resources.getString(R.string.fluentui_dismiss_snackbar),
                         size = ButtonSize.Small,
@@ -313,9 +323,42 @@ class V2SnackbarActivity : V2DemoActivity() {
                     )
                 }
                 Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
-                    Snackbar(snackbarState, Modifier.padding(bottom = 12.dp))
+                    Snackbar(snackbarState, Modifier.padding(bottom = 12.dp), null, true)
                 }
             }
         }
+    }
+}
+
+// Customized animation behavior for Snackbar
+val customizedAnimationBehavior: AnimationBehavior = object : AnimationBehavior() {
+    override var animationVariables: AnimationVariables = object : AnimationVariables() {
+        override var scale = Animatable(1F)
+        override var offsetY = Animatable(50F)
+    }
+
+    override suspend fun onShowAnimation() {
+        // pop from bottom
+        animationVariables.alpha.snapTo(1F)
+        animationVariables.offsetX.snapTo(0F)
+        animationVariables.offsetY.snapTo(50F)
+        animationVariables.offsetY.animateTo(
+            0F,
+            animationSpec = tween(
+                easing = LinearOutSlowInEasing,
+                durationMillis = 500,
+            )
+        )
+    }
+
+    override suspend fun onDismissAnimation() {
+        // slide out from left
+        animationVariables.offsetX.animateTo(
+            targetValue = -2000f,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
     }
 }

@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
-import com.jakewharton.threetenabp.AndroidThreeTen
 import com.microsoft.fluentui.datetimepicker.DateTimePicker
 import com.microsoft.fluentui.datetimepicker.DateTimePickerDialog
 import com.microsoft.fluentui.datetimepicker.DateTimePickerDialog.DateRangeMode
@@ -20,8 +19,8 @@ import com.microsoft.fluentui.util.isAccessibilityEnabled
 import com.microsoft.fluentuidemo.DemoActivity
 import com.microsoft.fluentuidemo.R
 import com.microsoft.fluentuidemo.databinding.ActivityDateTimePickerBinding
-import org.threeten.bp.Duration
-import org.threeten.bp.ZonedDateTime
+import java.time.Duration
+import java.time.ZonedDateTime
 
 class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePickedListener {
     companion object {
@@ -42,6 +41,7 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
 
         private const val DIALOG_DATE_TIME = "dialogDateTime"
         private const val DIALOG_MODE = "dialogMode"
+        private const val IS_DIALOG_SHOWING = "isDialogShowing"
     }
 
     enum class DatePickerType(
@@ -79,6 +79,7 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
     }
 
     private var dateTimePickerDialog: DateTimePickerDialog? = null
+    private var isDialogShowing: Boolean = false
 
     private lateinit var dateTimeBinding: ActivityDateTimePickerBinding
 
@@ -159,11 +160,6 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
 
     private var dialogMode: Mode? = null
 
-    init {
-        // Initialization of ThreeTenABP required for ZoneDateTime
-        AndroidThreeTen.init(this)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -183,6 +179,7 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
             singleModeTag = it.getString(SINGLE_MODE_TAG)
             dialogMode = it.getSerializable(DIALOG_MODE) as? Mode
             dialogDateTime = it.getSerializable(DIALOG_DATE_TIME) as? ZonedDateTime
+            isDialogShowing = savedInstanceState.getBoolean(IS_DIALOG_SHOWING)
         }
 
         // DateTimePickers
@@ -202,7 +199,13 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
         accessibilityManager.addAccessibilityStateChangeListener {
             updateButtonsForAccessibility(it)
         }
+        if(isDialogShowing) {
+            dateTimePickerDialog?.dismiss()
+            createDateTimePickerDialog()
+        }
+
     }
+
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -215,6 +218,7 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
         outState.putString(FRAGMENT_TAG, fragmentTag)
         outState.putSerializable(DIALOG_MODE, dialogMode)
         outState.putSerializable(DIALOG_DATE_TIME, dialogDateTime)
+        outState.putBoolean(IS_DIALOG_SHOWING, dateTimePickerDialog?.isShowing ?: false)
     }
 
     override fun onDestroy() {
@@ -251,6 +255,7 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
             getFragmentDateTime(),
             getFragmentDuration()
         )
+        dateTimePickerDialog?.onDateTimePickedListener = this
         dateTimePicker.show(supportFragmentManager, picker.tag)
     }
 
@@ -268,6 +273,13 @@ class DateTimePickerActivity : DemoActivity(), DateTimePickerDialog.OnDateTimePi
         dateTimePickerDialog?.onDateTimePickedListener =
             object : DateTimePickerDialog.OnDateTimePickedListener {
                 override fun onDateTimePicked(dateTime: ZonedDateTime, duration: Duration) {
+                    dialogMode = getDialogMode()
+                    dialogDateTime = dateTime
+                }
+            }
+        dateTimePickerDialog?.onDateTimeSelectedListener =
+            object : DateTimePickerDialog.OnDateTimeSelectedListener{
+                override fun onDateTimeSelected(dateTime: ZonedDateTime, duration: Duration) {
                     dialogMode = getDialogMode()
                     dialogDateTime = dateTime
                 }

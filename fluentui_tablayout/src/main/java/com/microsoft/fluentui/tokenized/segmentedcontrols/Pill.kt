@@ -50,14 +50,25 @@ import com.microsoft.fluentui.util.dpToPx
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
+/**
+ * Pill Meta Data defines meta data for  a pill.
+ * @param text: the text that's displayed on the Pill
+ * @param onClick: onClick callback for defining the click action on the pill
+ * @param icon: icon that's displayed on the Pill.
+ * @param enabled: to make pill disabled or enabled for click interactions
+ * @param notificationDot: boolean which defines whether to show a notification dot or not on the pill.
+ * @param calloutSelectionState: boolean which let's the user define if "selected" or "not selected" state of pill must be announced for the accessibility purposes
+ * @param semanticContentName: Pill name that must be announced for accessibility purposes, if it's null then @param text is used for accessibility announcement
+ */
 data class PillMetaData(
-    var text: String,
+    var text: String? = null,
     var onClick: (() -> Unit),
     var icon: ImageVector? = null,
     var enabled: Boolean = true,
     var selected: Boolean = false,
     var notificationDot: Boolean = false,
     var calloutSelectionState: Boolean = true,
+    var semanticContentName: String? = null,
 )
 
 /**
@@ -115,6 +126,11 @@ fun PillButton(
             selected = pillMetaData.selected,
             interactionSource = interactionSource
         )
+
+    val borderColor = token.borderColor(pillButtonInfo = pillButtonInfo)
+
+    val borderWidth = token.borderWidth(pillButtonInfo = pillButtonInfo)
+
     val iconColor =
         token.iconColor(pillButtonInfo = pillButtonInfo).getColorByState(
             enabled = pillMetaData.enabled,
@@ -163,20 +179,21 @@ fun PillButton(
             .defaultMinSize(minHeight = token.minHeight(pillButtonInfo))
             .clip(shape)
             .background(backgroundColor, shape)
+            .border(width = borderWidth, color = borderColor, shape = shape)
             .then(clickAndSemanticsModifier)
             .then(if (interactionSource.collectIsFocusedAsState().value || interactionSource.collectIsHoveredAsState().value) focusedBorderModifier else Modifier)
             .padding(vertical = token.verticalPadding(pillButtonInfo))
             .semantics(true) {
                 contentDescription =
-                    if (pillMetaData.enabled) "${pillMetaData.text} $selectedString"
-                    else "${pillMetaData.text} $enabledString"
-
+                    if (pillMetaData.enabled) "${pillMetaData.semanticContentName ?: pillMetaData.text ?:  ""} $selectedString"
+                    else "${pillMetaData.semanticContentName ?: pillMetaData.text ?: ""} $enabledString"
             },
         contentAlignment = Alignment.Center
     ) {
         Row(Modifier.width(IntrinsicSize.Max)) {
+            Spacer(Modifier.requiredWidth(token.horizontalMargin(pillButtonInfo = pillButtonInfo)))
             if (pillMetaData.icon != null) {
-                Spacer(Modifier.requiredWidth(FluentGlobalTokens.SizeTokens.Size180.value))
+                Spacer(Modifier.requiredWidth(token.iconSpace(pillButtonInfo = pillButtonInfo)))
                 Icon(
                     pillMetaData.icon!!,
                     pillMetaData.text,
@@ -185,10 +202,14 @@ fun PillButton(
                         .clearAndSetSemantics { },
                     tint = iconColor
                 )
-            } else {
-                Spacer(Modifier.requiredWidth(FluentGlobalTokens.SizeTokens.Size160.value))
+                if(pillMetaData.text != null){
+                    Spacer(Modifier.requiredWidth(token.iconSpace(pillButtonInfo = pillButtonInfo)))
+                }
+            }
+            if(pillMetaData.text != null){
+
                 BasicText(
-                    pillMetaData.text,
+                    pillMetaData.text!!,
                     modifier = Modifier
                         .weight(1F)
                         .clearAndSetSemantics { },
@@ -199,7 +220,6 @@ fun PillButton(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-
             if (pillMetaData.notificationDot) {
                 val notificationDotColor: Color =
                     token.notificationDotColor(pillButtonInfo)
@@ -223,7 +243,7 @@ fun PillButton(
                 else
                     Spacer(Modifier.requiredWidth(FluentGlobalTokens.SizeTokens.Size80.value))
             } else {
-                Spacer(Modifier.requiredWidth(FluentGlobalTokens.SizeTokens.Size160.value))
+                Spacer(Modifier.requiredWidth(token.horizontalMargin(pillButtonInfo = pillButtonInfo)))
             }
         }
     }
@@ -260,6 +280,7 @@ fun PillBar(
         ?: FluentTheme.controlTokens.tokens[ControlTokens.ControlType.PillBarControlType] as PillBarTokens
 
     val pillBarInfo = PillBarInfo(style)
+    val padding = token.padding(pillBarInfo = pillBarInfo)
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val positionString: String = LocalContext.current.resources.getString(R.string.position_string)
@@ -268,7 +289,7 @@ fun PillBar(
             .fillMaxWidth()
             .background(if (showBackground) token.backgroundBrush(pillBarInfo) else SolidColor(Color.Unspecified))
             .focusable(enabled = false),
-        contentPadding = PaddingValues(horizontal = 16.dp),
+        contentPadding = PaddingValues(padding),
         horizontalArrangement = Arrangement.spacedBy(8.dp, pillAlignment),
         state = lazyListState
     ) {
@@ -276,18 +297,22 @@ fun PillBar(
             item(index.toString()) {
                 PillButton(
                     pillMetadata,
-                    modifier = Modifier.onFocusEvent { focusState ->
-                        if (focusState.isFocused) {
-                            scope.launch {
-                                lazyListState.animateScrollToItem(
-                                    max(0, index - 2)
-                                )
+                    modifier = Modifier
+                        .onFocusEvent { focusState ->
+                            if (focusState.isFocused) {
+                                scope.launch {
+                                    lazyListState.animateScrollToItem(
+                                        max(0, index - 2)
+                                    )
+                                }
                             }
                         }
-                    }
                         .semantics(mergeDescendants = true) {
                             stateDescription =
-                                if (metadataList.size > 1) positionString.format(index+1, metadataList.size ) else ""
+                                if (metadataList.size > 1) positionString.format(
+                                    index + 1,
+                                    metadataList.size
+                                ) else ""
                         },
                     style = style, pillButtonTokens = pillButtonTokens
                 )

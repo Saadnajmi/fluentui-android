@@ -1,0 +1,55 @@
+trigger: none
+name: $(Date:yyyyMMdd).$(Rev:r)
+resources:
+  pipelines:
+  - pipeline: 'fluentui-android-maven-publish'
+    project: 'ISS'
+    source: 'fluentui-maven-central-publish [1es-pt]'
+  repositories:
+  - repository: OfficePipelineTemplates
+    type: git
+    name: 1ESPipelineTemplates/OfficePipelineTemplates
+    ref: refs/tags/release
+extends:
+  template: v1/Office.Official.PipelineTemplate.yml@OfficePipelineTemplates
+  parameters:
+    pool:
+      name: Azure-Pipelines-1ESPT-ExDShared
+      image: windows-2022
+      os: windows
+    customBuildTags:
+    - ES365AIMigrationTooling-Release
+    stages:
+    - stage: Stage_1
+      displayName: ESRP Release
+      jobs:
+      - job: Job_1
+        displayName: Agent job
+        condition: succeeded()
+        timeoutInMinutes: 0
+        templateContext:
+          type: releaseJob
+          isProduction: true
+          inputs:
+          - input: pipelineArtifact
+            buildType: 'specific'
+            project: '$(projectName)'
+            definition: '$(pipelineDefinition)'
+            buildVersionToDownload: 'specific'
+            pipelineId: '$(buildId)'
+            artifactName: 'Build'
+            targetPath: '$(Pipeline.Workspace)/fluentui-android-maven-publish/Build'
+        steps:
+        - task: SFP.release-tasks.custom-build-release-task.EsrpRelease@9
+          displayName: 'ESRP Release'
+          inputs:
+            connectedservicename: 'ESRP-JSHost3'
+            usemanagedidentity: false
+            keyvaultname: 'OGX-JSHost-KV'
+            authcertname: 'OGX-JSHost-Auth4'
+            signcertname: 'OGX-JSHost-Sign3'
+            clientid: '0a35e01f-eadf-420a-a2bf-def002ba898d'
+            domaintenantid: 'cdc5aeea-15c5-4db6-b079-fcadd2505dc2'
+            folderlocation: '$(Pipeline.Workspace)/fluentui-android-maven-publish/Build'
+            owners: 'ronakdhoot@microsoft.com'
+            approvers: 'dhruvmishra@microsoft.com'

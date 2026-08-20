@@ -62,6 +62,7 @@ Fluent UI for Android includes an expanding library of controls written in Kotli
 - [Tooltip](fluentui_others/src/main/java/com/microsoft/fluentui)
 
 ## Compose based Controls (v2)
+- [AcrylicPane](fluentui_others/src/main/java/com/microsoft/fluentui/tokenized/acrylicpane/AcrylicPane.kt)
 - [AnnouncementCard](fluentui_controls/src/main/java/com/microsoft/fluentui/tokenized/controls/AnnouncementCard.kt)
 - [AppBar](fluentui_topappbars/src/main/java/com/microsoft/fluentui/tokenized/AppBar.kt)
 - [Avatar](fluentui_persona/src/main/java/com/microsoft/fluentui/tokenized/persona/Avatar.kt)
@@ -116,7 +117,10 @@ Fluent UI for Android includes an expanding library of controls written in Kotli
 
 ### Requirements
 
-API 21+
+API 23+
+
+
+**Note:** The API requirement has been updated from API 21+ to API 23+. Please ensure your project meets this requirement if you are upgrading from an older version.
 
 ### 1. Using Gradle
 
@@ -146,20 +150,6 @@ dependencies {
  Replace `${version}` with the latest version of fluentui_drawer
  
  More information about contents of each module can be found in [Modularization](#modularization) section
-
-
-#### a) Develop for Surface-Duo:
-- Please also add the following lines to your repositories section in your gradle script:
-```gradle
-maven {
-    url "https://pkgs.dev.azure.com/MicrosoftDeviceSDK/DuoSDK-Public/_packaging/Duo-SDK-Feed/maven/v1"
-}
-```
-- Also add the SDK dependency to the module-level build.gradle file(current version may be  different
-from what's shown here):
-```gradle
-implementation "com.microsoft.device:dualscreen-layout:1.0.0-alpha01"
-```
 
 ### 2. Using Maven
 
@@ -195,14 +185,7 @@ implementation "com.microsoft.device:dualscreen-layout:1.0.0-alpha01"
 - Follow [these instructions](https://developer.android.com/studio/projects/android-library) to build and output an AAR files from the FluentUI modules, import the module(s) to your project, and add it as a dependency. If you're having trouble generating an AAR file for the module, make sure you select it and run e.g "Make Module 'fluentui_drawer'" from the Build menu.
 
 - Some components have dependencies you will need to manually add to your app if you are using this library as an AAR artifact because these dependencies do not get included in the output.
-  - If using **PeoplePickerView**, include this dependency in your gradle file:
-    ```gradle
-    implementation 'com.splitwise:tokenautocomplete:2.0.8'
-    ```
-  - If using **CalendarView** or **DateTimePickerDialog**, include this dependency in your gradle file:
-    ```gradle
-    implementation 'com.jakewharton.threetenabp:threetenabp:1.1.0'
-    ```
+  - None at the moment
   - Double check that these library versions correspond to the latest versions we implement in the FluentUI [build.gradle](fluentui_others\build.gradle).
 
 ### Import and use the library

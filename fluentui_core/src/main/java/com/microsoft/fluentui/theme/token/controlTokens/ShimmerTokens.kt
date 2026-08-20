@@ -11,6 +11,14 @@ import kotlinx.parcelize.Parcelize
 
 open class ShimmerInfo : ControlInfo
 
+enum class ShimmerOrientation {
+    LEFT_TO_RIGHT,
+    RIGHT_TO_LEFT,
+    TOPLEFT_TO_BOTTOMRIGHT,
+    BOTTOMRIGHT_TO_TOPLEFT,
+    _NONE //DO NOT USE
+}
+
 @Parcelize
 open class ShimmerTokens : IControlToken, Parcelable {
     @Composable
@@ -29,6 +37,11 @@ open class ShimmerTokens : IControlToken, Parcelable {
 
     @Composable
     open fun delay(shimmerInfo: ShimmerInfo): Int {
-        return 1000
+        return -1
+    }
+
+    @Composable
+    open fun orientation(shimmerInfo: ShimmerInfo): ShimmerOrientation {
+        return ShimmerOrientation._NONE //Do not return ShimmerOrientation._NONE if you are overriding this method, it will default to ShimmerOrientation.TOPLEFT_TO_BOTTOMRIGHT in that case
     }
 }
